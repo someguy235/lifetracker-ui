@@ -200,21 +200,93 @@ class MainArea extends React.Component {
 
     return(
       <div id="main-area">
-        <div id="options-area">
-          <OptionsArea 
-            metrics = {metrics}
-            addMetrics = {(metrics) => this.addMetrics(metrics)}
-            updateMetric = {(metric) => this.updateMetric(metric)}
-          />
+        <div className="row">
+          <div className="col-md-4 col-md-offset-8">
+            <div id="header-area">
+              <LoginArea />
+            </div>
+          </div>
         </div>
-        <div id="chart-area">
-          <ChartArea 
-            metrics = {metrics}
-          />
+        <div className="row">
+          <div className="col-md-4">
+            <div id="options-area">
+              <OptionsArea 
+                metrics = {metrics}
+                addMetrics = {(metrics) => this.addMetrics(metrics)}
+                updateMetric = {(metric) => this.updateMetric(metric)}
+              />
+            </div>
+          </div>
+          <div className="col-md-8">
+            <div id="chart-area">
+              <ChartArea 
+                metrics = {metrics}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
+}
+
+class LoginArea extends React.Component {
+  
+  constructor(props){
+    super(props);
+    this.state = {
+      username: '', 
+      password: ''
+    }
+    console.log(this);
+  }
+
+  componentWillMount(){
+    console.log("login component will mount");
+    this.checkAuth();
+  }
+
+  checkAuth(){
+    console.log("checkAuth()");
+    console.log(this.props.isAuthenticated);
+    if(!this.props.isAuthenticated){
+
+    }
+  }
+
+  submitAuth(e){
+    e.preventDefault();
+    console.log("submitAuth()");
+    console.log(e);
+    console.log(this.state.username);
+    console.log(this.state.password);
+  }
+
+  handleUsernameChange(e) {
+    console.log(e);
+    console.log(this);
+    this.setState({username: e.target.value});
+  }
+  handlePasswordChange(e) {
+    this.setState({password: e.target.value});
+  }
+
+
+  render(){
+    return(
+      this.props.isAuthenticated ?
+      <div>{this.props.username}</div> :
+      <div>
+        <form onSubmit={this.submitAuth}>
+          <input type="text" name="username" value={this.state.username} onChange={this.handleUsernameChange} placeholder="username" />
+          <input type="text" name="password" value={this.state.password} onChange={this.handleEmailChange} placeholder="password" />
+          <input type="submit" value="Login" />
+        </form>
+      </div>
+    )
+  }
+
+
 }
 
 class OptionsArea extends React.Component {
@@ -226,7 +298,7 @@ class OptionsArea extends React.Component {
   // }
 
   componentDidMount() {
-    this.getMetrics();
+    //this.getMetrics();
   }
 
   getMetrics() {
@@ -385,7 +457,7 @@ class ChartArea extends React.Component{
 
     _.each(dates, function(date){
       _.each(selected, function(metric){
-        if(_.has(metric.data, date) && (metric.data[date] != 0)){
+        if(_.has(metric.data, date) && (metric.data[date] !== 0)){
           columns[metric.name].push(metric.data[date]);
         }else{
           // columns[metric.name].push(metric.dflt);

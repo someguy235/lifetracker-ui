@@ -238,6 +238,10 @@ class LoginArea extends React.Component {
       username: '', 
       password: ''
     }
+    this.handleUsernameChange = this.handleUsernameChange.bind(this);
+    this.handlePasswordChange = this.handlePasswordChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+
     console.log(this);
   }
 
@@ -254,21 +258,30 @@ class LoginArea extends React.Component {
     }
   }
 
-  submitAuth(e){
+  handleSubmit(e){
     e.preventDefault();
-    console.log("submitAuth()");
-    console.log(e);
-    console.log(this.state.username);
-    console.log(this.state.password);
+    console.log("handleSubmit()");
+    // console.log(e);
+    // console.log(this.state.username);
+    // console.log(this.state.password);
+    getAuthToken(this.state.username, this.state.password).then(response => {
+      console.log(response);
+    })
+
   }
 
   handleUsernameChange(e) {
-    console.log(e);
-    console.log(this);
+    // console.log('handleUsernameChange');
+    // console.log(e.target.value);
+    // console.log(this);
     this.setState({username: e.target.value});
+    // console.log(this.state);
   }
   handlePasswordChange(e) {
+    // console.log('handlePasswordChange');
+    // console.log(e.target.value);
     this.setState({password: e.target.value});
+    // console.log(this.state);
   }
 
 
@@ -277,9 +290,9 @@ class LoginArea extends React.Component {
       this.props.isAuthenticated ?
       <div>{this.props.username}</div> :
       <div>
-        <form onSubmit={this.submitAuth}>
+        <form onSubmit={this.handleSubmit}>
           <input type="text" name="username" value={this.state.username} onChange={this.handleUsernameChange} placeholder="username" />
-          <input type="text" name="password" value={this.state.password} onChange={this.handleEmailChange} placeholder="password" />
+          <input type="text" name="password" value={this.state.password} onChange={this.handlePasswordChange} placeholder="password" />
           <input type="submit" value="Login" />
         </form>
       </div>
@@ -590,6 +603,34 @@ function getMetricData(name){
     })
   })
 }
+
+function getAuthToken(username, password){
+  console.log('getAuthToken');
+  console.log(username);
+  console.log(password);
+  return new Promise((resolve, reject) => {
+    fetch('http://localhost:8080/api/auth', {
+      method : 'POST',
+      body : JSON.stringify({
+        username : username,
+        password : password
+      }),
+      headers : {
+        "Content-Type": "application/json"
+      },
+      mode : 'cors'
+    }).then(function(response){
+      console.log(response);
+      console.log(response.json());
+      console.log(response.body);
+      console.log(response.body.authtoken);
+    }).catch(function(error){
+      console.log(error);
+    });
+  });
+}
+
+
 
 // function calculateWinner(squares){
 //   const lines = [

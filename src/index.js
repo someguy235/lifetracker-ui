@@ -144,7 +144,9 @@ class MainArea extends React.Component {
   constructor(props){
     super(props);
     this.state={
-      metrics : {}
+      metrics : {},
+      isAuth : false,
+      authToken : ''
     }
   }
 
@@ -197,13 +199,18 @@ class MainArea extends React.Component {
 
   render(){
     const metrics = this.state.metrics;
+    const isAuth = this.state.isAuth;
+    const authToken = this.state.authToken;
 
     return(
       <div id="main-area">
         <div className="row">
           <div className="col-md-4 col-md-offset-8">
             <div id="header-area">
-              <LoginArea />
+              <LoginArea 
+                isAuth = {isAuth}
+                authToken = {authToken}
+                />
             </div>
           </div>
         </div>
@@ -231,7 +238,9 @@ class MainArea extends React.Component {
 }
 
 class LoginArea extends React.Component {
-  
+  // this.props.isAuth
+  // this.props.authToken
+
   constructor(props){
     super(props);
     this.state = {
@@ -242,7 +251,7 @@ class LoginArea extends React.Component {
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
 
-    console.log(this);
+    // console.log(this);
   }
 
   componentWillMount(){
@@ -252,36 +261,41 @@ class LoginArea extends React.Component {
 
   checkAuth(){
     console.log("checkAuth()");
-    console.log(this.props.isAuthenticated);
-    if(!this.props.isAuthenticated){
+    console.log(this.props.isAuth);
+    console.log(this.props.authToken);
+    checkAuthToken(this.props.authToken).then(function(isAuth){
 
-    }
+      console.log(isAuth);
+      
+    }).catch(function(err){
+      console.log('error');
+      console.log(err);
+      // return false;
+    });
+    // if(!this.props.isAuth){
+
+    // }
   }
 
   handleSubmit(e){
     e.preventDefault();
     console.log("handleSubmit()");
-    // console.log(e);
-    // console.log(this.state.username);
-    // console.log(this.state.password);
     getAuthToken(this.state.username, this.state.password).then(response => {
       console.log(response);
+      this.props.authToken = response;
+      console.log(this.props.authToken);
+    }).catch(function(error){
+      console.log(error);
+      //TODO
     })
 
   }
 
   handleUsernameChange(e) {
-    // console.log('handleUsernameChange');
-    // console.log(e.target.value);
-    // console.log(this);
     this.setState({username: e.target.value});
-    // console.log(this.state);
   }
   handlePasswordChange(e) {
-    // console.log('handlePasswordChange');
-    // console.log(e.target.value);
     this.setState({password: e.target.value});
-    // console.log(this.state);
   }
 
 
@@ -605,9 +619,9 @@ function getMetricData(name){
 }
 
 function getAuthToken(username, password){
-  console.log('getAuthToken');
-  console.log(username);
-  console.log(password);
+  // console.log('getAuthToken');
+  // console.log(username);
+  // console.log(password);
   return new Promise((resolve, reject) => {
     fetch('http://localhost:8080/api/auth', {
       method : 'POST',
@@ -620,10 +634,43 @@ function getAuthToken(username, password){
       },
       mode : 'cors'
     }).then(function(response){
-      console.log(response);
-      console.log(response.json());
-      console.log(response.body);
-      console.log(response.body.authtoken);
+      if(response.status !== 200){
+        reject(response.status);
+      }else{
+        response.json().then(function(data){
+          resolve(data.authtoken);
+        });
+      }
+    }).catch(function(error){
+      console.log(error);
+    });
+  });
+}
+
+function checkAuthToken(token){
+  console.log('checkAuthToken');
+  console.log(token);
+  return new Promise((resolve, reject) => {
+    fetch('http://localhost:8080/api/auth', {
+      method : 'POST',
+      body : JSON.stringify({
+        token : token
+      }),
+      headers : {
+        "Content-Type": "application/json"
+      },
+      mode : 'cors'
+    }).then(function(response){
+      if(response.status !== 200){
+        reject(response.status);
+      }else{
+        response.json().then(function(data){
+          console.log(data);
+          resolve(data);
+        }).catch(function(error){
+          console.log(error)
+        });
+      }
     }).catch(function(error){
       console.log(error);
     });

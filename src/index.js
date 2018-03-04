@@ -146,8 +146,22 @@ class MainArea extends React.Component {
     this.state={
       metrics : {},
       isAuth : false,
-      authToken : ''
+      authToken : '',
+      username : ''
     }
+  }
+
+  setAuthState(isAuth){
+    this.setState({isAuth : isAuth});
+  }
+
+  setAuthToken(authToken){
+    this.setState({authToken : authToken});
+  }
+
+  setUsername(username){
+    console.log('setUsername: '+ username);
+    this.setState({username : username});
   }
 
   addMetrics(metrics){
@@ -201,6 +215,7 @@ class MainArea extends React.Component {
     const metrics = this.state.metrics;
     const isAuth = this.state.isAuth;
     const authToken = this.state.authToken;
+    const username = this.state.username;
 
     return(
       <div id="main-area">
@@ -208,8 +223,12 @@ class MainArea extends React.Component {
           <div className="col-md-4 col-md-offset-8">
             <div id="header-area">
               <LoginArea 
+                username = {username}
                 isAuth = {isAuth}
                 authToken = {authToken}
+                setAuthState = {(isAuth) => this.setAuthState(isAuth)}
+                setAuthToken = {(authToken) => this.setAuthToken(authToken)}
+                setUsername = {(username) => this.setUsername(username)}
                 />
             </div>
           </div>
@@ -238,8 +257,11 @@ class MainArea extends React.Component {
 }
 
 class LoginArea extends React.Component {
+  // this.props.username
+  // this.props.setUsername(username);
   // this.props.isAuth
   // this.props.authToken
+  // this.props.setAuthState(isAuth);
 
   constructor(props){
     super(props);
@@ -263,18 +285,23 @@ class LoginArea extends React.Component {
     console.log("checkAuth()");
     console.log(this.props.isAuth);
     console.log(this.props.authToken);
-    checkAuthToken(this.props.authToken).then(function(isAuth){
-
-      console.log(isAuth);
-      
-    }).catch(function(err){
-      console.log('error');
-      console.log(err);
-      // return false;
-    });
-    // if(!this.props.isAuth){
-
-    // }
+    if(this.props.authToken){
+      checkAuthToken(this.props.authToken).then(function(isAuth){
+        this.props.setAuthState(isAuth);
+        if(!this.props.isAuth){
+          this.props.setAuthToken(null);
+        }
+      }).catch(function(err){
+        this.props.setAuthState(false);
+        console.log('error');
+        console.log(err);
+        // return false;
+      });
+    }else{
+      this.props.setAuthState(false);
+    }
+    console.log(this.props.isAuth);
+    console.log(this.props.authToken);
   }
 
   handleSubmit(e){
@@ -282,13 +309,20 @@ class LoginArea extends React.Component {
     console.log("handleSubmit()");
     getAuthToken(this.state.username, this.state.password).then(response => {
       console.log(response);
-      this.props.authToken = response;
-      console.log(this.props.authToken);
+      this.props.setUsername(this.state.username);
+      this.props.setAuthState(true);
+      this.props.setAuthToken(response);
+      // console.log(this.props.authToken);
     }).catch(function(error){
+      this.props.setAuthState(false);
+      this.props.setAuthToken(null);
       console.log(error);
       //TODO
-    })
-
+    }).then(() => {
+      console.log(this.props.username);
+      console.log(this.props.isAuth);
+      console.log(this.props.authToken);
+    });
   }
 
   handleUsernameChange(e) {
@@ -301,7 +335,7 @@ class LoginArea extends React.Component {
 
   render(){
     return(
-      this.props.isAuthenticated ?
+      this.props.isAuth ?
       <div>{this.props.username}</div> :
       <div>
         <form onSubmit={this.handleSubmit}>
@@ -480,7 +514,7 @@ class ChartArea extends React.Component{
     });
     dates = _.union(...dates);
 
-    console.log(dates);
+    // console.log(dates);
 
     _.each(dates, function(date){
       _.each(selected, function(metric){
@@ -500,7 +534,7 @@ class ChartArea extends React.Component{
 
     dates.unshift('x');
 
-    console.log(dates);
+    // console.log(dates);
     data.columns = [];
     data.columns.push(dates);
 
@@ -509,7 +543,7 @@ class ChartArea extends React.Component{
       data.columns.push(column);
     })
     //data.columns = columns;
-    console.log(data);
+    // console.log(data);
 
     //this.setState({ data : data });
 
@@ -638,6 +672,7 @@ function getAuthToken(username, password){
         reject(response.status);
       }else{
         response.json().then(function(data){
+          // console.log(data);
           resolve(data.authtoken);
         });
       }

@@ -160,7 +160,7 @@ class MainArea extends React.Component {
   }
 
   setUsername(username){
-    console.log('setUsername: '+ username);
+    // console.log('setUsername: '+ username);
     this.setState({username : username});
   }
 
@@ -196,10 +196,10 @@ class MainArea extends React.Component {
     metrics[name].selected = !metric.selected;
     
     if(metric.data.length === 0){
-      getMetricData(name).then(response => {
+      getMetricData(name, this.state.username, this.state.authToken).then(response => {
         //this.props.addMetrics(newMetrics);
-        // console.log("gotResponse:");
-        // console.log(response);
+        console.log("gotResponse:");
+        console.log(response);
         metrics[name].data = response[name];
         // console.log("metrics: ");
         // console.log(metrics);
@@ -237,6 +237,9 @@ class MainArea extends React.Component {
           <div className="col-md-4">
             <div id="options-area">
               <OptionsArea 
+                isAuth = {isAuth}
+                authToken = {authToken}
+                username = {username}
                 metrics = {metrics}
                 addMetrics = {(metrics) => this.addMetrics(metrics)}
                 updateMetric = {(metric) => this.updateMetric(metric)}
@@ -246,6 +249,7 @@ class MainArea extends React.Component {
           <div className="col-md-8">
             <div id="chart-area">
               <ChartArea 
+                isAuth = {isAuth}
                 metrics = {metrics}
               />
             </div>
@@ -277,14 +281,14 @@ class LoginArea extends React.Component {
   }
 
   componentWillMount(){
-    console.log("login component will mount");
+    // console.log("login component will mount");
     this.checkAuth();
   }
 
   checkAuth(){
-    console.log("checkAuth()");
-    console.log(this.props.isAuth);
-    console.log(this.props.authToken);
+    // console.log("checkAuth()");
+    // console.log(this.props.isAuth);
+    // console.log(this.props.authToken);
     if(this.props.authToken){
       checkAuthToken(this.props.authToken).then(function(isAuth){
         this.props.setAuthState(isAuth);
@@ -293,35 +297,35 @@ class LoginArea extends React.Component {
         }
       }).catch(function(err){
         this.props.setAuthState(false);
-        console.log('error');
-        console.log(err);
+        // console.log('error');
+        // console.log(err);
         // return false;
       });
     }else{
       this.props.setAuthState(false);
     }
-    console.log(this.props.isAuth);
-    console.log(this.props.authToken);
+    // console.log(this.props.isAuth);
+    // console.log(this.props.authToken);
   }
 
   handleSubmit(e){
     e.preventDefault();
-    console.log("handleSubmit()");
+    // console.log("handleSubmit()");
     getAuthToken(this.state.username, this.state.password).then(response => {
-      console.log(response);
+      // console.log(response);
       this.props.setUsername(this.state.username);
-      this.props.setAuthState(true);
       this.props.setAuthToken(response);
+      this.props.setAuthState(true);
       // console.log(this.props.authToken);
     }).catch(function(error){
-      this.props.setAuthState(false);
       this.props.setAuthToken(null);
-      console.log(error);
+      this.props.setAuthState(false);
+      // console.log(error);
       //TODO
     }).then(() => {
-      console.log(this.props.username);
-      console.log(this.props.isAuth);
-      console.log(this.props.authToken);
+      // console.log(this.props.username);
+      // console.log(this.props.isAuth);
+      // console.log(this.props.authToken);
     });
   }
 
@@ -358,12 +362,22 @@ class OptionsArea extends React.Component {
     // }
   // }
 
-  componentDidMount() {
+  // componentDidMount() {
     //this.getMetrics();
+    // console.log("Options Area isAuth: "+ this.props.isAuth);
+  // }
+
+  componentWillReceiveProps(newProps){
+    // console.log("Options Area newProps");
+    // console.log("isAuth: "+ this.props.isAuth +"|"+ newProps.isAuth);
+    // console.log(newProps);
+    if(newProps.isAuth && !this.props.isAuth){
+      this.getMetrics();
+    }
   }
 
   getMetrics() {
-    loadAvailableMetrics().then(newMetrics => {
+    loadAvailableMetrics(this.props.username, this.props.authToken).then(newMetrics => {
       this.props.addMetrics(newMetrics);
     });
   }
@@ -437,19 +451,25 @@ class OptionsArea extends React.Component {
     // console.log(archivedMetricsList);
 
     return (
+      this.props.isAuth ? 
+
       <div className="options">
         {/* <div className="options-button">
           <button onClick={() => this.getMetrics()}>Load Metrics</button>
         </div> */}
         <div className="active-metrics-list">
-          {activeMetricsList.length > 0 ? 'Active Metrics:' : ''}
+          {activeMetricsList.length > 0 ? 'Active Metrics:' : 'No Active Metrics'}
           <ol>{activeMetricsList}</ol>
         </div>
         <div className="archived-metrics-list">
-          {archivedMetricsList.length > 0 ? 'Archived Metrics:' : ''}
+          {archivedMetricsList.length > 0 ? 'Archived Metrics:' : 'No Archived Metrics'}
           <ol>{archivedMetricsList}</ol>
         </div>
       </div>
+      
+      :
+
+      <div className="options">Log in to see options</div> 
     );
   }
 
@@ -464,6 +484,10 @@ class ChartArea extends React.Component{
     //     columns : []
     //   },
     // }
+  // }
+  // componentWillReceiveProps(newProps){
+    // console.log("Chart Area newProps:");
+    // console.log(newProps);
   // }
 
   render(){
@@ -601,7 +625,13 @@ class ChartArea extends React.Component{
 
     return(
       // <C3Chart data={data} type={type} axis={axis} options={options}/> 
+      this.props.isAuth ?
+
       <C3Chart data={data} axis={axis} options={options}/> 
+
+      :
+
+      null
     )
   }
 }
@@ -628,12 +658,22 @@ ReactDOM.render(
   document.getElementById('main')
 );
 
-function loadAvailableMetrics(){
-  //console.log("called loadAvailableMetrics()");
+function loadAvailableMetrics(username, authToken){
+  // console.log("called loadAvailableMetrics()");
+  // console.log(username);
+  // console.log(authToken);
   return new Promise((resolve, reject) => {
-    fetch('/metrics').then(function (response) {
+    fetch('/api/metrics?user='+username, {
+      headers : {
+        'x-access-token' : authToken,
+        "Content-Type": "application/json"
+      }
+
+    }).then(function (response) {
       //return response.json();
       resolve(response.json());
+    }).catch(function(error){
+      console.log(error);
     })
     //.then(function (body) {
     //  console.log(body);
@@ -642,12 +682,19 @@ function loadAvailableMetrics(){
   })
 }
 
-function getMetricData(name){
+function getMetricData(name, username, authToken){
   // console.log("getMetricData: "+ name);
   return new Promise((resolve, reject) => {
     //fetch('/data?metric='+ name).then(function(response){
-    fetch('/data?metric='+ name + '&range=600').then(function(response){
+    fetch('/api/data?metric='+ name + '&range=600&user='+ username, {
+      headers : {
+        'x-access-token' : authToken,
+        "Content-Type": "application/json"
+      }
+    }).then(function(response){
       resolve(response.json());
+    }).catch(function(error){
+      console.log(error);
     })
   })
 }
@@ -683,8 +730,8 @@ function getAuthToken(username, password){
 }
 
 function checkAuthToken(token){
-  console.log('checkAuthToken');
-  console.log(token);
+  // console.log('checkAuthToken');
+  // console.log(token);
   return new Promise((resolve, reject) => {
     fetch('http://localhost:8080/api/auth', {
       method : 'POST',
@@ -700,7 +747,7 @@ function checkAuthToken(token){
         reject(response.status);
       }else{
         response.json().then(function(data){
-          console.log(data);
+          // console.log(data);
           resolve(data);
         }).catch(function(error){
           console.log(error)

@@ -146,6 +146,7 @@ class MainArea extends React.Component {
     this.state={
       metrics : {},
       isAuth : false,
+      invalidAuth : false,
       authToken : '',
       username : ''
     }
@@ -157,6 +158,10 @@ class MainArea extends React.Component {
 
   setAuthToken(authToken){
     this.setState({authToken : authToken});
+  }
+
+  setInvalidAuth(invalidAuth){
+    this.setState({invalidAuth : invalidAuth});
   }
 
   setUsername(username){
@@ -214,6 +219,7 @@ class MainArea extends React.Component {
   render(){
     const metrics = this.state.metrics;
     const isAuth = this.state.isAuth;
+    const invalidAuth = this.state.invalidAuth;
     const authToken = this.state.authToken;
     const username = this.state.username;
 
@@ -225,9 +231,11 @@ class MainArea extends React.Component {
               <LoginArea 
                 username = {username}
                 isAuth = {isAuth}
+                invalidAuth = {invalidAuth}
                 authToken = {authToken}
                 setAuthState = {(isAuth) => this.setAuthState(isAuth)}
                 setAuthToken = {(authToken) => this.setAuthToken(authToken)}
+                setInvalidAuth = {(invalidAuth) => this.setInvalidAuth(invalidAuth)}
                 setUsername = {(username) => this.setUsername(username)}
                 />
             </div>
@@ -316,13 +324,15 @@ class LoginArea extends React.Component {
       this.props.setUsername(this.state.username);
       this.props.setAuthToken(response);
       this.props.setAuthState(true);
+      this.props.setInvalidAuth(false);
       // console.log(this.props.authToken);
     }).catch(function(error){
       this.props.setAuthToken(null);
       this.props.setAuthState(false);
-      // console.log(error);
+      this.props.setInvalidAuth(true);
+      console.log(error);
       //TODO
-    }).then(() => {
+    }.bind(this)).then(() => {
       // console.log(this.props.username);
       // console.log(this.props.isAuth);
       // console.log(this.props.authToken);
@@ -341,6 +351,8 @@ class LoginArea extends React.Component {
     return(
       this.props.isAuth ?
       <div>{this.props.username}</div> :
+      this.props.invalidAuth ? 
+      <div>invalid username/password</div> : 
       <div>
         <form onSubmit={this.handleSubmit}>
           <input type="text" name="username" value={this.state.username} onChange={this.handleUsernameChange} placeholder="username" />
@@ -718,6 +730,7 @@ function getAuthToken(username, password){
       if(response.status !== 200){
         reject(response.status);
       }else{
+        console.log(response);
         response.json().then(function(data){
           // console.log(data);
           resolve(data.authtoken);

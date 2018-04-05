@@ -153,10 +153,12 @@ class MainArea extends React.Component {
   }
 
   setAuthState(isAuth){
+    console.log('setAuthState: '+ isAuth);
     this.setState({isAuth : isAuth});
   }
 
   setAuthToken(authToken){
+    console.log('setAuthToken: '+ authToken);
     this.setState({authToken : authToken});
   }
 
@@ -219,8 +221,10 @@ class MainArea extends React.Component {
   render(){
     const metrics = this.state.metrics;
     const isAuth = this.state.isAuth;
+    console.log("render isAuth: "+ isAuth);
     const invalidAuth = this.state.invalidAuth;
     const authToken = this.state.authToken;
+    console.log("render authToken: "+ authToken);
     const username = this.state.username;
 
     return(
@@ -269,11 +273,14 @@ class MainArea extends React.Component {
 }
 
 class LoginArea extends React.Component {
-  // this.props.username
-  // this.props.setUsername(username);
-  // this.props.isAuth
-  // this.props.authToken
-  // this.props.setAuthState(isAuth);
+  // username = {username}
+  // isAuth = {isAuth}
+  // invalidAuth = {invalidAuth}
+  // authToken = {authToken}
+  // setAuthState = {(isAuth) => this.setAuthState(isAuth)}
+  // setAuthToken = {(authToken) => this.setAuthToken(authToken)}
+  // setInvalidAuth = {(invalidAuth) => this.setInvalidAuth(invalidAuth)}
+  // setUsername = {(username) => this.setUsername(username)}
 
   constructor(props){
     super(props);
@@ -289,31 +296,38 @@ class LoginArea extends React.Component {
   }
 
   componentWillMount(){
-    // console.log("login component will mount");
-    this.checkAuth();
+    console.log("login component will mount");
+    console.log(localStorage.getItem('authToken'));
+    var token = localStorage.getItem('authToken')
+    this.props.setAuthToken(token);
+    console.log(token);
+    this.checkAuth(token);
   }
 
-  checkAuth(){
-    // console.log("checkAuth()");
-    // console.log(this.props.isAuth);
-    // console.log(this.props.authToken);
-    if(this.props.authToken){
-      checkAuthToken(this.props.authToken).then(function(isAuth){
+  checkAuth(token){
+    console.log("checkAuth()");
+    console.log(this.props.isAuth);
+    console.log(token);
+    if(token){
+      checkAuthToken(token).then(function(isAuth){
+        console.log("isAuth: ");
+        console.log(isAuth);
         this.props.setAuthState(isAuth);
-        if(!this.props.isAuth){
+        if(!isAuth){
           this.props.setAuthToken(null);
         }
-      }).catch(function(err){
+      }.bind(this)).catch(function(err){
+
         this.props.setAuthState(false);
-        // console.log('error');
-        // console.log(err);
+        console.log('error');
+        console.log(err);
         // return false;
-      });
+      }.bind(this));
     }else{
       this.props.setAuthState(false);
     }
-    // console.log(this.props.isAuth);
-    // console.log(this.props.authToken);
+    console.log(this.props.isAuth);
+    console.log(this.props.authToken);
   }
 
   handleSubmit(e){
@@ -350,20 +364,29 @@ class LoginArea extends React.Component {
   render(){
     return(
       this.props.isAuth ?
-      <div>{this.props.username}</div> :
-      this.props.invalidAuth ? 
-      <div>invalid username/password</div> : 
+      
+      <div>{this.props.username}<LoginError invalidAuth = {this.props.invalidAuth} /></div>
+      
+      :
+      
       <div>
         <form onSubmit={this.handleSubmit}>
           <input type="text" name="username" value={this.state.username} onChange={this.handleUsernameChange} placeholder="username" />
           <input type="text" name="password" value={this.state.password} onChange={this.handlePasswordChange} placeholder="password" />
           <input type="submit" value="Login" />
         </form>
+        <LoginError invalidAuth = {this.props.invalidAuth} />
       </div>
     )
   }
+}
 
-
+class LoginError extends React.Component {
+  render() {
+    return(
+      this.props.invalidAuth ? <div>invalid username/password</div> : null
+    )
+  }
 }
 
 class OptionsArea extends React.Component {
@@ -733,6 +756,7 @@ function getAuthToken(username, password){
         console.log(response);
         response.json().then(function(data){
           // console.log(data);
+          storeAuthToken(data.authtoken);
           resolve(data.authtoken);
         });
       }
@@ -742,9 +766,15 @@ function getAuthToken(username, password){
   });
 }
 
+function storeAuthToken(token){
+  console.log('storeAuthToken: '+ token);
+  localStorage.setItem('authToken', token);
+  console.log(localStorage.getItem('authToken'));
+}
+
 function checkAuthToken(token){
-  // console.log('checkAuthToken');
-  // console.log(token);
+  console.log('checkAuthToken');
+  console.log(token);
   return new Promise((resolve, reject) => {
     fetch('http://localhost:8080/api/auth', {
       method : 'POST',
@@ -756,15 +786,17 @@ function checkAuthToken(token){
       },
       mode : 'cors'
     }).then(function(response){
+      console.log(response);
       if(response.status !== 200){
         reject(response.status);
       }else{
-        response.json().then(function(data){
+        resolve(true);
+        //response.json().then(function(data){
           // console.log(data);
-          resolve(data);
-        }).catch(function(error){
-          console.log(error)
-        });
+          // resolve(data);
+        // }).catch(function(error){
+          // console.log(error)
+        // });
       }
     }).catch(function(error){
       console.log(error);
